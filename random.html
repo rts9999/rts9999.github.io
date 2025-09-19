@@ -1,0 +1,114 @@
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ランダム画像表示（imagesフォルダ内）</title>
+  <style>
+    body { text-align: center; padding: 40px; }
+    img { max-width: 400px; max-height: 400px; }
+    button { margin-top: 20px; padding: 10px 20px; }
+    .info { margin: 15px 0; font-size: 1.2em; }
+    .btns { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>ラ</h1>
+  <img id="randomImg" src="" alt="ランダム画像">
+  <div class="info">
+    <span id="progress"></span>
+    <span id="round"></span>
+  </div>
+  <div class="btns">
+    <button onclick="showPrevImage()">戻る</button>
+    <button onclick="showRandomImage()">画ラ</button>
+  </div>
+
+  <script>
+    // 画像リスト作成
+    const images = [];
+    for(let i=1; i<=52; i++) {
+      images.push(`images/torannpu-illust${i}.png`);
+    }
+
+    // シャッフル関数
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    let round = 1;
+    let shuffledImages = shuffle(images.slice());
+    let currentIndex = 0;
+    let lastImg = null;
+    let history = []; // 表示済み画像の履歴
+
+    function updateInfo() {
+      document.getElementById("progress").textContent = `【${currentIndex + 1} / 52 枚目】 `;
+      document.getElementById("round").textContent = `（${round} 周目）`;
+    }
+
+    // 画像を表示する（履歴管理もする）
+    function showRandomImage(isFirst = false) {
+      // 履歴追加（最初の1枚目以外で）
+      if (!isFirst) {
+        history.push({
+          imgSrc: shuffledImages[currentIndex],
+          round: round,
+          shuffledImages: shuffledImages.slice(),
+          index: currentIndex
+        });
+        currentIndex++;
+      }
+
+      // もし全部表示し終えたら、新しいシャッフルで次の周へ
+      if (currentIndex >= shuffledImages.length) {
+        round++;
+        do {
+          shuffledImages = shuffle(images.slice());
+        } while (shuffledImages[0] === lastImg && images.length > 1);
+        currentIndex = 0;
+        history = []; // 新しいラウンドでは履歴リセット
+      }
+
+      // 今回表示する画像
+      let imgSrc = shuffledImages[currentIndex];
+
+      // 直前と同じ画像が連続しないように
+      if (imgSrc === lastImg && images.length > 1) {
+        if (currentIndex + 1 < shuffledImages.length) {
+          [shuffledImages[currentIndex], shuffledImages[currentIndex+1]] = [shuffledImages[currentIndex+1], shuffledImages[currentIndex]];
+          imgSrc = shuffledImages[currentIndex];
+        }
+      }
+
+      document.getElementById("randomImg").src = imgSrc;
+      lastImg = imgSrc;
+      updateInfo();
+    }
+
+    function showPrevImage() {
+      if (history.length === 0) return; // 戻れない
+
+      let prev = history.pop();
+      round = prev.round;
+      shuffledImages = prev.shuffledImages.slice();
+      currentIndex = prev.index;
+      lastImg = prev.imgSrc;
+      document.getElementById("randomImg").src = prev.imgSrc;
+      updateInfo();
+    }
+
+    // ページロード時に1枚表示
+    window.onload = function() {
+      currentIndex = 0;
+      history = [];
+      showRandomImage(true); // isFirst=trueなので履歴に積まない
+    };
+  </script>
+</body>
+</html>
